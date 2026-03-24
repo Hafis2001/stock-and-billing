@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text, TouchableOpacity } from 'react-native';
 import { useStore } from './src/store/useStore';
 import { openDatabase, initDB } from './src/db/database';
 import AppNavigator from './src/navigation/AppNavigator';

@@ -67,14 +67,26 @@ export const initDB = async (db) => {
     )`);
 
     console.log('Running migrations...');
-    // Migrations — silently ignore if column already exists
-    try { await db.execAsync(`ALTER TABLE Products ADD COLUMN unit TEXT DEFAULT 'piece'`); } catch (_) {}
-    try { await db.execAsync(`ALTER TABLE OrderItems ADD COLUMN unit TEXT DEFAULT 'piece'`); } catch (_) {}
-    try { await db.execAsync(`ALTER TABLE OrderItems ADD COLUMN purchase_price REAL DEFAULT 0`); } catch (_) {}
-    try { await db.execAsync(`ALTER TABLE StockHistory ADD COLUMN type TEXT DEFAULT 'add'`); } catch (_) {}
-    try { await db.execAsync(`ALTER TABLE StockHistory ADD COLUMN reason TEXT`); } catch (_) {}
-    try { await db.execAsync(`ALTER TABLE Orders ADD COLUMN customer_name TEXT`); } catch (_) {}
-    try { await db.execAsync(`ALTER TABLE Orders ADD COLUMN payment_type TEXT DEFAULT 'Cash'`); } catch (_) {}
+    // Sequential migrations to prevent bridge overload
+    const migrations = [
+      `ALTER TABLE Products ADD COLUMN unit TEXT DEFAULT 'piece'`,
+      `ALTER TABLE OrderItems ADD COLUMN unit TEXT DEFAULT 'piece'`,
+      `ALTER TABLE OrderItems ADD COLUMN purchase_price REAL DEFAULT 0`,
+      `ALTER TABLE StockHistory ADD COLUMN type TEXT DEFAULT 'add'`,
+      `ALTER TABLE StockHistory ADD COLUMN reason TEXT`,
+      `ALTER TABLE Orders ADD COLUMN customer_name TEXT`,
+      `ALTER TABLE Orders ADD COLUMN payment_type TEXT DEFAULT 'Cash'`
+    ];
+
+    for (const sql of migrations) {
+      try {
+        await db.execAsync(sql);
+        console.log(`Migration applied: ${sql.substring(0, 30)}...`);
+      } catch (e) {
+        // Silently fail if column already exists
+        // console.log(`Migration skipped (already exists?): ${sql.substring(0, 30)}`);
+      }
+    }
 
     console.log('Database initialized successfully');
   } catch (error) {
