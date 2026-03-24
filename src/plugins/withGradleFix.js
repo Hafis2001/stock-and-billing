@@ -8,9 +8,10 @@ function withGradleFix(config) {
   return withAppBuildGradle(config, (config) => {
     if (config.modResults.contents.includes('enableBundleCompression')) {
       console.log('Applying Gradle fix: Removing enableBundleCompression');
+      // More robust regex to handle variations in spacing/formatting
       config.modResults.contents = config.modResults.contents.replace(
-        /enableBundleCompression = .*/g,
-        '// enableBundleCompression removed for RN 0.76+ compatibility'
+        /^[ \t]*enableBundleCompression\s*=\s*.*$/gm,
+        '    // enableBundleCompression removed for RN 0.76+ compatibility'
       );
     }
     return config;
