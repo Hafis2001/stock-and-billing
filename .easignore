@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+*.jks
+*.p12
+*.key
+*.mobileprovision
+dist/
+web-build/
