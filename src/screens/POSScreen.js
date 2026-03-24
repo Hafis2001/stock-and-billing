@@ -28,6 +28,7 @@ export default function POSScreen() {
 
   const [qtyModal, setQtyModal] = useState(null); // product object
   const [qtyInput, setQtyInput] = useState('1');
+  const [showCart, setShowCart] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [paymentType, setPaymentType] = useState('Cash'); // 'Cash', 'Bank', 'Credit'
