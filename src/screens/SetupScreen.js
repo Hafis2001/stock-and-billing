@@ -40,7 +40,7 @@ export default function SetupScreen() {
     >
       <View style={styles.card}>
         <Image 
-          source={require('../../assets/shop.png')} 
+          source={require('../../assets/shop.jpg')} 
           style={styles.shopImage}
           resizeMode="contain"
         />
