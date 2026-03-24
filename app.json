@@ -28,6 +28,7 @@
     },
     "plugins": [
       "expo-sqlite",
+      "./src/plugins/withGradleFix",
       [
         "expo-build-properties",
         {
