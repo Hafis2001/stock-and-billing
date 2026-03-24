@@ -194,3 +194,29 @@ export const getLowStockProducts = async (db, threshold = 5) => {
     [threshold]
   );
 };
+
+export const getRecentOrders = async (db, limit = 50) => {
+  const orders = await db.getAllAsync(
+    `SELECT *, datetime(created_at, 'localtime') as local_time FROM Orders ORDER BY created_at DESC LIMIT ?`,
+    [limit]
+  );
+  
+  // For each order, we might want to attach items for the combined PDF
+  for (const order of orders) {
+    order.items = await db.getAllAsync(
+      'SELECT oi.*, p.name FROM OrderItems oi JOIN Products p ON oi.product_id = p.id WHERE oi.order_id = ?',
+      [order.id]
+    );
+  }
+  return orders;
+};
+
+export const deleteOrders = async (db, orderIds) => {
+  if (!orderIds || orderIds.length === 0) return;
+  const placeholders = orderIds.map(() => '?').join(',');
+  await db.withTransactionAsync(async () => {
+    // Delete order items first (FK constraint)
+    await db.runAsync(`DELETE FROM OrderItems WHERE order_id IN (${placeholders})`, orderIds);
+    await db.runAsync(`DELETE FROM Orders WHERE id IN (${placeholders})`, orderIds);
+  });
+};

@@ -95,3 +95,75 @@ export const generateReceiptPDF = async (orderResult, shopProfile) => {
     console.error('Error generating receipt:', error);
   }
 };
+
+export const generateCombinedBillsPDF = async (orders, shopProfile) => {
+  try {
+    const dateStr = new Date().toLocaleString('en-IN');
+    let totalAll = 0;
+    let itemsHtml = '';
+    
+    orders.forEach(order => {
+      totalAll += parseFloat(order.total_amount);
+      itemsHtml += `
+        <tr>
+          <td>#${order.id}</td>
+          <td>${order.customer_name || 'Walk-in'}</td>
+          <td>${order.payment_type}</td>
+          <td style="text-align:right">₹${parseFloat(order.total_amount).toFixed(2)}</td>
+        </tr>
+      `;
+    });
+
+    const html = `
+      <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; padding: 20px; color: #333; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .title { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; padding: 10px; border-bottom: 2px solid #4F46E5; background: #f8fafc; }
+            td { padding: 10px; border-bottom: 1px solid #eee; }
+            .total-row { font-weight: bold; background: #f8fafc; font-size: 18px; }
+            .footer { margin-top: 30px; text-align: center; color: #999; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">Bills Summary Report</div>
+            <div>${shopProfile?.shop_name || 'My Shop'}</div>
+            <div style="font-size: 13px; color: #666;">Generated on: ${dateStr}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Mode</th>
+                <th style="text-align:right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+              <tr class="total-row">
+                <td colspan="3" style="text-align:right">GRAND TOTAL</td>
+                <td style="text-align:right">₹${totalAll.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="footer">Detailed summary of ${orders.length} shared bills.</div>
+        </body>
+      </html>
+    `;
+
+    const { uri } = await Print.printToFileAsync({ html });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error generating combined PDF:', error);
+    return false;
+  }
+};

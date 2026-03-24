@@ -9,6 +9,7 @@ import ProductsScreen from '../screens/ProductsScreen';
 import StockUpdateScreen from '../screens/StockUpdateScreen';
 import POSScreen from '../screens/POSScreen';
 import ReportsScreen from '../screens/ReportsScreen';
+import BillsScreen from '../screens/BillsScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -34,6 +35,7 @@ export default function AppNavigator() {
             <Stack.Screen name="StockUpdateScreen" component={StockUpdateScreen} options={{ title: 'Update Stock' }} />
             <Stack.Screen name="POSScreen" component={POSScreen} options={{ title: 'Take Order' }} />
             <Stack.Screen name="ReportsScreen" component={ReportsScreen} options={{ title: 'Reports' }} />
+            <Stack.Screen name="BillsScreen" component={BillsScreen} options={{ title: 'Manage Bills' }} />
           </>
         )}
       </Stack.Navigator>

@@ -45,6 +45,7 @@ export default function HomeScreen({ navigation }) {
         
         <View style={styles.grid}>
           <MenuCard title="Take Order" color={colors.primary} icon="🛒" onPress={() => navigation.navigate('POSScreen')} />
+          <MenuCard title="Bills" color="#EC4899" icon="🧾" onPress={() => navigation.navigate('BillsScreen')} />
           <MenuCard title="Products" color={colors.secondary} icon="📦" onPress={() => navigation.navigate('ProductsScreen')} />
           <MenuCard title="Update Stock" color={colors.warning} icon="📈" onPress={() => navigation.navigate('StockUpdateScreen')} />
           <MenuCard title="Reports" color="#8B5CF6" icon="📊" onPress={() => navigation.navigate('ReportsScreen')} />

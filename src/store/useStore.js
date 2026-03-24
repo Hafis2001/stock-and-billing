@@ -9,6 +9,7 @@ export const useStore = create((set, get) => ({
   products: [],
   lowStockProducts: [],
   cart: [],
+  recentOrders: [],
 
   setDB: (db) => set({ db, isDBReady: true }),
 
@@ -98,9 +99,10 @@ export const useStore = create((set, get) => ({
     
     const orderId = await Queries.createOrder(db, cart, totalAmount, customerName, paymentType);
     
-    // Clear cart and reload products to get updated stock
+    // Clear cart and reload products and orders
     set({ cart: [] });
     await get().loadProducts();
+    await get().loadRecentOrders();
     
     return { 
       orderId, 
@@ -109,5 +111,21 @@ export const useStore = create((set, get) => ({
       paymentType,
       cartAtCheckout: [...cart] 
     };
+  },
+
+  // Recent Orders (Bills)
+  loadRecentOrders: async () => {
+    const { db } = get();
+    if (!db) return;
+    const orders = await Queries.getRecentOrders(db);
+    set({ recentOrders: orders });
+  },
+
+  deleteOrders: async (orderIds) => {
+    const { db } = get();
+    if (!db) return;
+    await Queries.deleteOrders(db, orderIds);
+    await get().loadRecentOrders();
+    await get().loadProducts(); // Stock might have changed? (No, but history might)
   }
 }));
