@@ -6,3 +6,5 @@ node_modules/
 *.mobileprovision
 dist/
 web-build/
+android/
+ios/
