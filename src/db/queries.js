@@ -17,23 +17,27 @@ export const getProducts = async (db) => {
 
 export const addProduct = async (db, { name, category, unit, purchase_price, selling_price, stock_quantity }) => {
   try {
+    const p = parseFloat(purchase_price) || 0;
+    const s = parseFloat(selling_price) || 0;
+    const q = parseFloat(stock_quantity) || 0;
+
     const result = await db.runAsync(
       'INSERT INTO Products (name, category, unit, purchase_price, selling_price, stock_quantity) VALUES (?, ?, ?, ?, ?, ?)',
       [
         name,
         category || '',
         unit || 'piece',
-        parseFloat(purchase_price) || 0,
-        parseFloat(selling_price) || 0,
-        parseFloat(stock_quantity) || 0
+        p,
+        s,
+        q
       ]
     );
 
     // Also record initial stock in history if > 0
-    if (parseFloat(stock_quantity) > 0) {
+    if (q > 0) {
       await db.runAsync(
         'INSERT INTO StockHistory (product_id, added_quantity, purchase_price) VALUES (?, ?, ?)',
-        [result.lastInsertRowId, parseFloat(stock_quantity), parseFloat(purchase_price) || 0]
+        [result.lastInsertRowId, q, p]
       );
     }
 
@@ -46,16 +50,31 @@ export const addProduct = async (db, { name, category, unit, purchase_price, sel
 
 export const updateProductStock = async (db, productId, addQuantity, newPurchasePrice, newSellingPrice) => {
   try {
+    const q = parseFloat(addQuantity) || 0;
+    const p = parseFloat(newPurchasePrice) || 0;
+    const s = parseFloat(newSellingPrice) || 0;
+    
+    console.log(`Updating stock for Product ID: ${productId}, Add: ${q}, New P: ${p}, New S: ${s}`);
+    
+    if (!productId) throw new Error("Missing Product ID");
+
+    await db.runAsync('BEGIN TRANSACTION');
+    
     await db.runAsync(
       'INSERT INTO StockHistory (product_id, type, added_quantity, purchase_price) VALUES (?, ?, ?, ?)',
-      [productId, 'add', parseFloat(addQuantity), parseFloat(newPurchasePrice)]
+      [productId, 'add', q, p]
     );
+    
     await db.runAsync(
       'UPDATE Products SET stock_quantity = stock_quantity + ?, purchase_price = ?, selling_price = ? WHERE id = ?',
-      [parseFloat(addQuantity), parseFloat(newPurchasePrice), parseFloat(newSellingPrice), productId]
+      [q, p, s, productId]
     );
+    
+    await db.runAsync('COMMIT');
+    console.log('Stock update successful');
   } catch (error) {
-    console.error('Error updating stock:', error);
+    console.error('Error updating stock database:', error);
+    try { await db.runAsync('ROLLBACK'); } catch (_) {}
     throw error;
   }
 };
@@ -94,9 +113,10 @@ export const createOrder = async (db, items, totalAmount, customerName, paymentT
     // Manually manage the transaction
     await db.runAsync('BEGIN TRANSACTION');
 
+    const totalAmt = parseFloat(totalAmount) || 0;
     const orderResult = await db.runAsync(
       'INSERT INTO Orders (total_amount, customer_name, payment_type) VALUES (?, ?, ?)',
-      [parseFloat(totalAmount), customerName || '', paymentType || 'Cash']
+      [totalAmt, customerName || '', paymentType || 'Cash']
     );
     const orderId = orderResult.lastInsertRowId;
 
