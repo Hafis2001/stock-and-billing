@@ -29,6 +29,7 @@ export default function POSScreen() {
   const [qtyModal, setQtyModal] = useState(null); // product object
   const [qtyInput, setQtyInput] = useState('1');
   const [showCart, setShowCart] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [paymentType, setPaymentType] = useState('Cash'); // 'Cash', 'Bank', 'Credit'
@@ -79,7 +80,15 @@ export default function POSScreen() {
           `Total: ₹${orderResult.totalAmount.toFixed(2)}\nCustomer: ${customerName || 'Walk-in'}\nPayment: ${paymentType}`,
           [
             { text: 'No', style: 'cancel' },
-            { text: 'Share 🧾', onPress: () => generateReceiptPDF(orderResult, shopProfile) }
+            { 
+              text: 'Share 🧾', 
+              onPress: async () => {
+                if (isSharing) return;
+                setIsSharing(true);
+                await generateReceiptPDF(orderResult, shopProfile);
+                setIsSharing(false);
+              }
+            }
           ]
         );
       }

@@ -8,6 +8,7 @@ export default function ReportsScreen() {
   const db = useStore(state => state.db);
   const [dailySales, setDailySales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSharing, setIsSharing] = useState(false);
   
   const totalSalesAllTime = dailySales.reduce((sum, day) => sum + (day.total_sales || 0), 0);
   const totalCashSales = dailySales.reduce((sum, day) => sum + (day.cash_sales || 0), 0);
@@ -37,6 +38,8 @@ export default function ReportsScreen() {
   }, [db]);
 
   const shareSummary = async (type) => {
+    if (isSharing) return;
+    setIsSharing(true);
     let title = "";
     let sales = 0;
     let profit = 0;
@@ -82,6 +85,8 @@ export default function ReportsScreen() {
       await Share.share({ message });
     } catch (error) {
       Alert.alert('Error', 'Failed to share summary');
+    } finally {
+      setIsSharing(false);
     }
   };
 

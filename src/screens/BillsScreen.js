@@ -14,6 +14,7 @@ export default function BillsScreen() {
   const shopProfile = useStore(state => state.shopProfile);
   
   const [loading, setLoading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -37,7 +38,9 @@ export default function BillsScreen() {
     );
   };
 
-  const handleShareSingle = (order) => {
+  const handleShareSingle = async (order) => {
+    if (isSharing) return;
+    setIsSharing(true);
     // Re-calculating items for billing utility (already attached in getRecentOrders)
     const orderResult = {
       orderId: order.id,
@@ -46,13 +49,16 @@ export default function BillsScreen() {
       paymentType: order.payment_type,
       cartAtCheckout: order.items
     };
-    generateReceiptPDF(orderResult, shopProfile);
+    await generateReceiptPDF(orderResult, shopProfile);
+    setIsSharing(false);
   };
 
   const handleShareSelected = async () => {
-    if (selectedIds.length === 0) return;
+    if (selectedIds.length === 0 || isSharing) return;
+    setIsSharing(true);
     const selectedOrders = recentOrders.filter(o => selectedIds.includes(o.id));
     const success = await generateCombinedBillsPDF(selectedOrders, shopProfile);
+    setIsSharing(false);
     
     if (success) {
       Alert.alert(
@@ -102,8 +108,9 @@ export default function BillsScreen() {
             </View>
           </View>
           <TouchableOpacity 
-            style={styles.shareIconBtn} 
+            style={[styles.shareIconBtn, isSharing && { opacity: 0.5 }]} 
             onPress={() => handleShareSingle(item)}
+            disabled={isSharing}
           >
             <Text style={{fontSize: 20}}>🧾</Text>
           </TouchableOpacity>
@@ -152,8 +159,14 @@ export default function BillsScreen() {
               <Text style={styles.clearText}>Clear</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.mainShareBtn} onPress={handleShareSelected}>
-            <Text style={styles.mainShareBtnText}>Share Combined PDF 📤</Text>
+          <TouchableOpacity 
+            style={[styles.mainShareBtn, isSharing && { opacity: 0.7 }]} 
+            onPress={handleShareSelected}
+            disabled={isSharing}
+          >
+            <Text style={styles.mainShareBtnText}>
+              {isSharing ? 'Sharing... ⏳' : 'Share Combined PDF 📤'}
+            </Text>
           </TouchableOpacity>
         </View>
       )}

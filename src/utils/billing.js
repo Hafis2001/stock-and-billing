@@ -90,9 +90,12 @@ export const generateReceiptPDF = async (orderResult, shopProfile) => {
     const { uri } = await Print.printToFileAsync({ html });
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      return true;
     }
+    return false;
   } catch (error) {
     console.error('Error generating receipt:', error);
+    return false;
   }
 };
 
