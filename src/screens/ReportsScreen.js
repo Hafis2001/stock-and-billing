@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Linking, Share } from 'react-native';
 import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
