@@ -48,6 +48,8 @@ export const initDB = async (db) => {
     await db.execAsync(`CREATE TABLE IF NOT EXISTS Orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       total_amount REAL NOT NULL,
+      customer_name TEXT,
+      payment_type TEXT DEFAULT 'Cash',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
@@ -71,6 +73,8 @@ export const initDB = async (db) => {
     try { await db.execAsync(`ALTER TABLE OrderItems ADD COLUMN purchase_price REAL DEFAULT 0`); } catch (_) {}
     try { await db.execAsync(`ALTER TABLE StockHistory ADD COLUMN type TEXT DEFAULT 'add'`); } catch (_) {}
     try { await db.execAsync(`ALTER TABLE StockHistory ADD COLUMN reason TEXT`); } catch (_) {}
+    try { await db.execAsync(`ALTER TABLE Orders ADD COLUMN customer_name TEXT`); } catch (_) {}
+    try { await db.execAsync(`ALTER TABLE Orders ADD COLUMN payment_type TEXT DEFAULT 'Cash'`); } catch (_) {}
 
     console.log('Database initialized successfully');
   } catch (error) {

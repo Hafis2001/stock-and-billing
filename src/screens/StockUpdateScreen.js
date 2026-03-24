@@ -22,6 +22,7 @@ export default function StockUpdateScreen() {
   const [mode, setMode] = useState('add'); // 'add' or 'deduct'
   const [quantity, setQuantity] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
+  const [sellingPrice, setSellingPrice] = useState('');
   const [reason, setReason] = useState('Damaged');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -34,6 +35,7 @@ export default function StockUpdateScreen() {
     setSelectedProduct(product);
     setMode('add');
     setPurchasePrice(product.purchase_price.toString());
+    setSellingPrice(product.selling_price.toString());
     setQuantity('');
     setReason('Damaged');
   };
@@ -47,13 +49,18 @@ export default function StockUpdateScreen() {
 
     try {
       if (mode === 'add') {
-        const price = parseFloat(purchasePrice);
-        if (!price || price <= 0) {
+        const pPrice = parseFloat(purchasePrice);
+        const sPrice = parseFloat(sellingPrice);
+        if (!pPrice || pPrice <= 0) {
           Alert.alert('Invalid', 'Please enter a valid purchase price');
           return;
         }
-        await updateStock(selectedProduct.id, qty, price);
-        Alert.alert('✅ Done', `Added ${qty} ${unitLabel(selectedProduct.unit || 'piece')} to stock`);
+        if (!sPrice || sPrice <= 0) {
+          Alert.alert('Invalid', 'Please enter a valid selling price');
+          return;
+        }
+        await updateStock(selectedProduct.id, qty, pPrice, sPrice);
+        Alert.alert('✅ Done', `Added ${qty} ${unitLabel(selectedProduct.unit || 'piece')} to stock. Rates updated.`);
       } else {
         await deductStock(selectedProduct.id, qty, reason);
         Alert.alert('✅ Done', `Deducted ${qty} ${unitLabel(selectedProduct.unit || 'piece')} (${reason})`);
@@ -162,18 +169,30 @@ export default function StockUpdateScreen() {
                 onChangeText={setQuantity}
               />
 
-              {/* Purchase Price (only for add) */}
+              {/* Prices (only for add) */}
               {mode === 'add' && (
-                <>
-                  <Text style={styles.label}>Purchase Price (₹)</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0.00"
-                    keyboardType="decimal-pad"
-                    value={purchasePrice}
-                    onChangeText={setPurchasePrice}
-                  />
-                </>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.label}>Purchase Price (₹)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                      value={purchasePrice}
+                      onChangeText={setPurchasePrice}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.label}>Selling Price (₹)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                      value={sellingPrice}
+                      onChangeText={setSellingPrice}
+                    />
+                  </View>
+                </View>
               )}
 
               {/* Reason (only for deduct) */}
@@ -215,7 +234,7 @@ export default function StockUpdateScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   headerTitle: { fontSize: 15, color: colors.textLight, padding: 16, paddingBottom: 0 },
-  listContainer: { padding: 16 },
+  listContainer: { padding: 16, paddingBottom: 60 },
   productCard: {
     backgroundColor: colors.surface, padding: 16, borderRadius: 12, marginBottom: 12,
     flexDirection: 'row', alignItems: 'center',

@@ -43,10 +43,10 @@ export const useStore = create((set, get) => ({
     await get().loadProducts();
   },
 
-  updateStock: async (productId, addQuantity, newPurchasePrice) => {
+  updateStock: async (productId, addQuantity, newPurchasePrice, newSellingPrice) => {
     const { db } = get();
     if (!db) return;
-    await Queries.updateProductStock(db, productId, addQuantity, newPurchasePrice);
+    await Queries.updateProductStock(db, productId, addQuantity, newPurchasePrice, newSellingPrice);
     await get().loadProducts();
   },
 
@@ -90,18 +90,24 @@ export const useStore = create((set, get) => ({
   clearCart: () => set({ cart: [] }),
 
   // Checkout
-  checkoutCart: async () => {
+  checkoutCart: async (customerName, paymentType) => {
     const { db, cart } = get();
     if (!db || cart.length === 0) return null;
     
     const totalAmount = cart.reduce((sum, item) => sum + item.selling_price * item.quantity, 0);
     
-    const orderId = await Queries.createOrder(db, cart, totalAmount);
+    const orderId = await Queries.createOrder(db, cart, totalAmount, customerName, paymentType);
     
     // Clear cart and reload products to get updated stock
     set({ cart: [] });
     await get().loadProducts();
     
-    return { orderId, totalAmount, cartAtCheckout: [...cart] };
+    return { 
+      orderId, 
+      totalAmount, 
+      customerName, 
+      paymentType,
+      cartAtCheckout: [...cart] 
+    };
   }
 }));

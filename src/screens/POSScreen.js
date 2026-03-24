@@ -28,8 +28,9 @@ export default function POSScreen() {
 
   const [qtyModal, setQtyModal] = useState(null); // product object
   const [qtyInput, setQtyInput] = useState('1');
-  const [showCart, setShowCart] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [paymentType, setPaymentType] = useState('Cash'); // 'Cash', 'Bank', 'Credit'
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,12 +68,14 @@ export default function POSScreen() {
       }
     }
     try {
-      const orderResult = await checkoutCart();
+      const orderResult = await checkoutCart(customerName, paymentType);
       if (orderResult) {
         setShowCart(false);
+        setCustomerName('');
+        setPaymentType('Cash');
         Alert.alert(
           '✅ Order Placed!',
-          `Total: ₹${orderResult.totalAmount.toFixed(2)}\n\nShare receipt?`,
+          `Total: ₹${orderResult.totalAmount.toFixed(2)}\nCustomer: ${customerName || 'Walk-in'}\nPayment: ${paymentType}`,
           [
             { text: 'No', style: 'cancel' },
             { text: 'Share 🧾', onPress: () => generateReceiptPDF(orderResult, shopProfile) }
@@ -226,29 +229,63 @@ export default function POSScreen() {
               </TouchableOpacity>
             </View>
 
-            <FlatList
-              data={cart}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderCartItem}
-              style={{ maxHeight: 300 }}
-              ItemSeparatorComponent={() => <View style={styles.divider} />}
-              ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.textLight, padding: 16 }}>Cart is empty</Text>}
-            />
+            <ScrollView style={{ maxHeight: 350 }}>
+              <FlatList
+                data={cart}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderCartItem}
+                scrollEnabled={false}
+                ItemSeparatorComponent={() => <View style={styles.divider} />}
+                ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.textLight, padding: 16 }}>Cart is empty</Text>}
+              />
 
-            <View style={styles.cartSummary}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Items</Text>
-                <Text style={styles.summaryValue}>{totalItems}</Text>
+              <View style={styles.divider} />
+
+              {/* Customer Info */}
+              <View style={styles.checkoutSection}>
+                <Text style={styles.sectionLabel}>Customer Name (Optional)</Text>
+                <TextInput
+                  style={styles.customerInput}
+                  placeholder="Enter name..."
+                  value={customerName}
+                  onChangeText={setCustomerName}
+                />
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Total</Text>
-                <Text style={styles.summaryTotal}>₹{totalAmount.toFixed(2)}</Text>
+
+              {/* Payment Type */}
+              <View style={styles.checkoutSection}>
+                <Text style={styles.sectionLabel}>Payment Mode</Text>
+                <View style={styles.paymentRow}>
+                  {['Cash', 'Bank', 'Credit'].map(type => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[styles.paymentBtn, paymentType === type && styles.paymentBtnActive]}
+                      onPress={() => setPaymentType(type)}
+                    >
+                      <Text style={[styles.paymentBtnText, paymentType === type && styles.paymentBtnTextActive]}>
+                        {type === 'Cash' ? '💵 ' : type === 'Bank' ? '🏦 ' : '💳 '}{type}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
+
+              <View style={styles.cartSummary}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Items</Text>
+                  <Text style={styles.summaryValue}>{totalItems}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Total Amount</Text>
+                  <Text style={styles.summaryTotal}>₹{totalAmount.toFixed(2)}</Text>
+                </View>
+              </View>
+            </ScrollView>
 
             <TouchableOpacity style={styles.checkoutBtn} onPress={handleCheckout}>
-              <Text style={styles.checkoutBtnText}>Place Order  ₹{totalAmount.toFixed(2)}</Text>
+              <Text style={styles.checkoutBtnText}>Confirm Order  ₹{totalAmount.toFixed(2)}</Text>
             </TouchableOpacity>
+            <View style={{ height: Platform.OS === 'ios' ? 20 : 10 }} />
           </View>
         </View>
       </Modal>
@@ -354,4 +391,20 @@ const styles = StyleSheet.create({
     shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
   },
   checkoutBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  
+  // Checkout Extras
+  checkoutSection: { marginTop: 16 },
+  sectionLabel: { fontSize: 13, fontWeight: '600', color: colors.textLight, marginBottom: 8 },
+  customerInput: {
+    backgroundColor: colors.background, borderRadius: 10, padding: 12, fontSize: 16, color: colors.text,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  paymentRow: { flexDirection: 'row', gap: 8 },
+  paymentBtn: {
+    flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: colors.background,
+    borderWidth: 1, borderColor: colors.border, alignItems: 'center',
+  },
+  paymentBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  paymentBtnText: { fontSize: 12, fontWeight: '600', color: colors.textLight },
+  paymentBtnTextActive: { color: '#fff' },
 });

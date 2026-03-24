@@ -14,8 +14,8 @@ const formatQty = (qty, unit) => {
 
 export const generateReceiptPDF = async (orderResult, shopProfile) => {
   try {
-    const { orderId, totalAmount, cartAtCheckout } = orderResult;
-    const dateStr = new Date().toLocaleString('en-IN');
+  const { orderId, totalAmount, cartAtCheckout, customerName, paymentType } = orderResult;
+  const dateStr = new Date().toLocaleString('en-IN');
 
     let itemsHtml = '';
     cartAtCheckout.forEach(item => {
@@ -57,8 +57,10 @@ export const generateReceiptPDF = async (orderResult, shopProfile) => {
           
           <hr class="divider-dash" />
           
-          <div class="meta">Order #${orderId}</div>
+          <div class="meta"><b>Order #${orderId}</b></div>
           <div class="meta">${dateStr}</div>
+          <div class="meta">Customer: ${customerName || 'Walk-in'}</div>
+          <div class="meta">Payment: <b>${paymentType || 'Cash'}</b></div>
           
           <table>
             <thead>

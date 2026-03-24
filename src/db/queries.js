@@ -44,15 +44,15 @@ export const addProduct = async (db, { name, category, unit, purchase_price, sel
   }
 };
 
-export const updateProductStock = async (db, productId, addQuantity, newPurchasePrice) => {
+export const updateProductStock = async (db, productId, addQuantity, newPurchasePrice, newSellingPrice) => {
   try {
     await db.runAsync(
       'INSERT INTO StockHistory (product_id, type, added_quantity, purchase_price) VALUES (?, ?, ?, ?)',
       [productId, 'add', parseFloat(addQuantity), parseFloat(newPurchasePrice)]
     );
     await db.runAsync(
-      'UPDATE Products SET stock_quantity = stock_quantity + ?, purchase_price = ? WHERE id = ?',
-      [parseFloat(addQuantity), parseFloat(newPurchasePrice), productId]
+      'UPDATE Products SET stock_quantity = stock_quantity + ?, purchase_price = ?, selling_price = ? WHERE id = ?',
+      [parseFloat(addQuantity), parseFloat(newPurchasePrice), parseFloat(newSellingPrice), productId]
     );
   } catch (error) {
     console.error('Error updating stock:', error);
@@ -89,14 +89,14 @@ export const deductStock = async (db, productId, deductQuantity, reason) => {
 };
 
 
-export const createOrder = async (db, items, totalAmount) => {
+export const createOrder = async (db, items, totalAmount, customerName, paymentType) => {
   try {
     // Manually manage the transaction
     await db.runAsync('BEGIN TRANSACTION');
 
     const orderResult = await db.runAsync(
-      'INSERT INTO Orders (total_amount) VALUES (?)',
-      [parseFloat(totalAmount)]
+      'INSERT INTO Orders (total_amount, customer_name, payment_type) VALUES (?, ?, ?)',
+      [parseFloat(totalAmount), customerName || '', paymentType || 'Cash']
     );
     const orderId = orderResult.lastInsertRowId;
 
@@ -132,6 +132,9 @@ export const getDailySales = async (db) => {
     SELECT 
       d.date,
       COALESCE(s.total_sales, 0) as total_sales,
+      COALESCE(s.cash_sales, 0) as cash_sales,
+      COALESCE(s.bank_sales, 0) as bank_sales,
+      COALESCE(s.credit_sales, 0) as credit_sales,
       COALESCE(s.gross_profit, 0) as gross_profit,
       COALESCE(h.total_loss, 0) as total_loss,
       (COALESCE(s.gross_profit, 0) - COALESCE(h.total_loss, 0)) as net_profit
@@ -144,6 +147,9 @@ export const getDailySales = async (db) => {
       SELECT 
         date(o.created_at) as date,
         SUM(o.total_amount) as total_sales,
+        SUM(CASE WHEN o.payment_type = 'Cash' THEN o.total_amount ELSE 0 END) as cash_sales,
+        SUM(CASE WHEN o.payment_type = 'Bank' THEN o.total_amount ELSE 0 END) as bank_sales,
+        SUM(CASE WHEN o.payment_type = 'Credit' THEN o.total_amount ELSE 0 END) as credit_sales,
         SUM((oi.selling_price - oi.purchase_price) * oi.quantity) as gross_profit
       FROM Orders o
       JOIN OrderItems oi ON o.id = oi.order_id
