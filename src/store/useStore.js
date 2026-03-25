@@ -74,10 +74,14 @@ export const useStore = create((set, get) => ({
     });
   },
   
-  updateCartItemQuantity: (productId, quantity) => {
+  updateCartItem: (productId, quantity, sellingPrice) => {
     set((state) => ({
       cart: state.cart.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
+        item.id === productId ? { 
+          ...item, 
+          quantity, 
+          selling_price: sellingPrice !== undefined ? sellingPrice : item.selling_price 
+        } : item
       ),
     }));
   },

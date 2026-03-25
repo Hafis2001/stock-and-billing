@@ -38,6 +38,16 @@ export default function BillsScreen() {
     );
   };
 
+  const isAllSelected = filteredOrders.length > 0 && selectedIds.length === filteredOrders.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredOrders.map(o => o.id));
+    }
+  };
+
   const handleShareSingle = async (order) => {
     if (isSharing) return;
     setIsSharing(true);
@@ -136,6 +146,14 @@ export default function BillsScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
+        {filteredOrders.length > 0 && (
+          <TouchableOpacity style={styles.selectAllBtn} onPress={handleSelectAll}>
+            <View style={[styles.checkbox, isAllSelected && styles.checkboxActive, { marginRight: 8 }]}>
+              {isAllSelected && <Text style={styles.checkboxTick}>✓</Text>}
+            </View>
+            <Text style={styles.selectAllText}>{isAllSelected ? "Deselect All" : "Select All"}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <FlatList
@@ -178,7 +196,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
   searchBar: { padding: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderColor: colors.border },
-  searchInput: { backgroundColor: colors.background, padding: 12, borderRadius: 10, fontSize: 15, color: colors.text },
+  searchInput: { backgroundColor: colors.background, padding: 12, borderRadius: 10, fontSize: 15, color: colors.text, marginBottom: 12 },
+  selectAllBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  selectAllText: { fontSize: 15, fontWeight: 'bold', color: colors.primary },
   listContainer: { padding: 16, paddingBottom: 100 },
   orderCard: {
     backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 16,
@@ -217,7 +237,7 @@ const styles = StyleSheet.create({
   selectionCount: { fontSize: 15, fontWeight: 'bold', color: colors.text },
   clearText: { color: colors.danger, fontWeight: 'bold' },
   mainShareBtn: {
-    backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center'
+    backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center',marginBottom:35,
   },
   mainShareBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   emptyText: { color: colors.textLight, fontSize: 16 },

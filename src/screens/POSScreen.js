@@ -22,12 +22,15 @@ export default function POSScreen() {
   const cart = useStore(state => state.cart);
   const addToCart = useStore(state => state.addToCart);
   const removeFromCart = useStore(state => state.removeFromCart);
-  const updateCartItemQuantity = useStore(state => state.updateCartItemQuantity);
+  const updateCartItem = useStore(state => state.updateCartItem);
   const checkoutCart = useStore(state => state.checkoutCart);
   const shopProfile = useStore(state => state.shopProfile);
 
   const [qtyModal, setQtyModal] = useState(null); // product object
   const [qtyInput, setQtyInput] = useState('1');
+  const [editCartModal, setEditCartModal] = useState(null);
+  const [editQtyInput, setEditQtyInput] = useState('');
+  const [editPriceInput, setEditPriceInput] = useState('');
   const [showCart, setShowCart] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,11 +56,33 @@ export default function POSScreen() {
     if (!qty || qty <= 0) { alert('Enter a valid quantity'); return; }
     const existing = cart.find(i => i.id === qtyModal.id);
     if (existing) {
-      updateCartItemQuantity(qtyModal.id, qty);
+      updateCartItem(qtyModal.id, qty, existing.selling_price);
     } else {
       addToCart(qtyModal, qty);
     }
     setQtyModal(null);
+  };
+
+  const openEditCartModal = (item) => {
+    setEditCartModal(item);
+    setEditQtyInput(item.quantity.toString());
+    setEditPriceInput(item.selling_price.toString());
+  };
+
+  const handleEditCartConfirm = () => {
+    const qty = parseFloat(editQtyInput);
+    const price = parseFloat(editPriceInput);
+    if (!qty || qty <= 0) { alert('Enter a valid quantity'); return; }
+    if (isNaN(price) || price < 0) { alert('Enter a valid price'); return; }
+
+    const product = products.find(p => p.id === editCartModal.id);
+    if (product && parseFloat(product.stock_quantity) < qty) {
+      Alert.alert('Out of Stock', `Not enough stock. Available: ${formatQty(product.stock_quantity, product.unit)}`);
+      return;
+    }
+
+    updateCartItem(editCartModal.id, qty, price);
+    setEditCartModal(null);
   };
 
   const handleCheckout = async () => {
@@ -138,10 +163,12 @@ export default function POSScreen() {
 
   const renderCartItem = ({ item }) => (
     <View style={styles.cartRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cartItemName}>{item.name}</Text>
-        <Text style={styles.cartItemQty}>{formatQty(item.quantity, item.unit || 'piece')} × ₹{item.selling_price}</Text>
-      </View>
+      <TouchableOpacity style={{ flex: 1 }} onPress={() => openEditCartModal(item)}>
+        <Text style={styles.cartItemName}>{item.name} ✏️</Text>
+        <Text style={styles.cartItemQty}>
+          {formatQty(item.quantity, item.unit || 'piece')} × ₹{item.selling_price}
+        </Text>
+      </TouchableOpacity>
       <Text style={styles.cartItemTotal}>₹{(item.quantity * item.selling_price).toFixed(2)}</Text>
       <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.removeBtn}>
         <Text style={{ color: colors.danger, fontSize: 16 }}>✕</Text>
@@ -221,6 +248,47 @@ export default function POSScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.qtyConfirmBtn} onPress={handleConfirmQty}>
                   <Text style={styles.qtyConfirmText}>Add to Cart</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Edit Cart Modal */}
+      <Modal visible={!!editCartModal} animationType="fade" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.qtyOverlay}>
+          {editCartModal && (
+            <View style={styles.qtyModal}>
+              <Text style={styles.qtyModalTitle}>Edit {editCartModal.name}</Text>
+              
+              <Text style={styles.qtyLabel}>Quantity ({unitLabel(editCartModal.unit || 'piece')})</Text>
+              <TextInput
+                style={styles.qtyInput}
+                keyboardType="decimal-pad"
+                value={editQtyInput}
+                onChangeText={setEditQtyInput}
+                selectTextOnFocus
+              />
+
+              <Text style={[styles.qtyLabel, { marginTop: 12 }]}>Selling Price (₹)</Text>
+              <TextInput
+                style={styles.qtyInput}
+                keyboardType="decimal-pad"
+                value={editPriceInput}
+                onChangeText={setEditPriceInput}
+                selectTextOnFocus
+              />
+
+              <Text style={styles.qtyPreview}>
+                Total: ₹{(parseFloat(editQtyInput || 0) * parseFloat(editPriceInput || 0)).toFixed(2)}
+              </Text>
+              <View style={styles.qtyBtns}>
+                <TouchableOpacity style={styles.qtyCancelBtn} onPress={() => setEditCartModal(null)}>
+                  <Text style={styles.qtyCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.qtyConfirmBtn} onPress={handleEditCartConfirm}>
+                  <Text style={styles.qtyConfirmText}>Save Details</Text>
                 </TouchableOpacity>
               </View>
             </View>

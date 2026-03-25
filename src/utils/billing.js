@@ -103,16 +103,26 @@ export const generateCombinedBillsPDF = async (orders, shopProfile) => {
   try {
     const dateStr = new Date().toLocaleString('en-IN');
     let totalAll = 0;
+    let cashTotal = 0, cashCount = 0;
+    let bankTotal = 0, bankCount = 0;
+    let creditTotal = 0, creditCount = 0;
+    
     let itemsHtml = '';
     
     orders.forEach(order => {
-      totalAll += parseFloat(order.total_amount);
+      const amt = parseFloat(order.total_amount);
+      totalAll += amt;
+      
+      if (order.payment_type === 'Cash') { cashTotal += amt; cashCount++; }
+      else if (order.payment_type === 'Bank') { bankTotal += amt; bankCount++; }
+      else if (order.payment_type === 'Credit') { creditTotal += amt; creditCount++; }
+      
       itemsHtml += `
         <tr>
           <td>#${order.id}</td>
           <td>${order.customer_name || 'Walk-in'}</td>
           <td>${order.payment_type}</td>
-          <td style="text-align:right">₹${parseFloat(order.total_amount).toFixed(2)}</td>
+          <td style="text-align:right">₹${amt.toFixed(2)}</td>
         </tr>
       `;
     });
@@ -154,6 +164,23 @@ export const generateCombinedBillsPDF = async (orders, shopProfile) => {
               </tr>
             </tbody>
           </table>
+
+          <div style="margin-top: 30px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="font-weight: bold; margin-bottom: 12px; font-size: 16px; color: #1e293b;">Payment Breakdown</div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dotted #cbd5e1;">
+                <span style="color: #475569;">Cash (${cashCount} bills)</span>
+                <span style="font-weight: bold; color: #1e293b;">₹${cashTotal.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dotted #cbd5e1;">
+                <span style="color: #475569;">Bank (${bankCount} bills)</span>
+                <span style="font-weight: bold; color: #1e293b;">₹${bankTotal.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                <span style="color: #475569;">Credit (${creditCount} bills)</span>
+                <span style="font-weight: bold; color: #1e293b;">₹${creditTotal.toFixed(2)}</span>
+            </div>
+          </div>
+
           <div class="footer">Detailed summary of ${orders.length} shared bills.</div>
         </body>
       </html>

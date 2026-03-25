@@ -7,6 +7,8 @@ import * as Queries from '../db/queries';
 export default function ReportsScreen() {
   const db = useStore(state => state.db);
   const [dailySales, setDailySales] = useState([]);
+  const [stockSummary, setStockSummary] = useState(null);
+  const [lossBreakdown, setLossBreakdown] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSharing, setIsSharing] = useState(false);
   
@@ -25,8 +27,14 @@ export default function ReportsScreen() {
       if (db) {
         setLoading(true);
         try {
-          const sales = await Queries.getDailySales(db);
+          const [sales, sSummary, lBreakdown] = await Promise.all([
+            Queries.getDailySales(db),
+            Queries.getStockSummary(db),
+            Queries.getLossBreakdown(db)
+          ]);
           setDailySales(sales);
+          setStockSummary(sSummary);
+          setLossBreakdown(lBreakdown);
         } catch (e) {
           console.error('Fetch reports error:', e);
         } finally {
@@ -160,6 +168,35 @@ export default function ReportsScreen() {
               <Text style={[styles.detailValue, { color: colors.danger }]}>- ₹{totalLossAllTime.toFixed(2)}</Text>
             </View>
           </View>
+        </View>
+
+        {/* Current Stock Summary Card */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Current Stock Overview</Text>
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryBox}>
+              <Text style={styles.summaryLabel}>Total Stock Value</Text>
+              <Text style={styles.summaryValue}>₹{(stockSummary?.total_stock_value || 0).toFixed(2)}</Text>
+            </View>
+            <View style={[styles.summaryBox, { borderLeftWidth: 1, borderColor: colors.border }]}>
+              <Text style={styles.summaryLabel}>Expected Profit</Text>
+              <Text style={[styles.summaryValue, { color: colors.secondary }]}>
+                ₹{(stockSummary?.expected_profit || 0).toFixed(2)}
+              </Text>
+            </View>
+          </View>
+
+          {lossBreakdown.length > 0 && (
+            <View style={styles.detailSummary}>
+              <Text style={[styles.sectionTitle, { fontSize: 13, marginBottom: 8, marginTop: 8 }]}>Deductions Breakdown (Historical)</Text>
+              {lossBreakdown.map((lb, idx) => (
+                <View key={idx} style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>{lb.reason}:</Text>
+                  <Text style={[styles.detailValue, { color: colors.danger }]}>- ₹{lb.total_loss.toFixed(2)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>Share Reports</Text>

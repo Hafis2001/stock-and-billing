@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, FlatList } from 'react-native';
 import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ export default function HomeScreen({ navigation }) {
   const shopProfile = useStore(state => state.shopProfile);
   const loadProducts = useStore(state => state.loadProducts);
   const lowStockProducts = useStore(state => state.lowStockProducts);
+
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -35,10 +37,14 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {lowStockProducts.length > 0 && (
-          <View style={styles.alertCard}>
+          <TouchableOpacity 
+            style={styles.alertCard} 
+            onPress={() => setShowLowStockModal(true)}
+            activeOpacity={0.8}
+          >
             <Text style={styles.alertTitle}>⚠️ Low Stock Alert</Text>
-            <Text style={styles.alertText}>{lowStockProducts.length} items are running low on stock.</Text>
-          </View>
+            <Text style={styles.alertText}>{lowStockProducts.length} items are running low on stock. Tap to view.</Text>
+          </TouchableOpacity>
         )}
 
         <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -51,6 +57,34 @@ export default function HomeScreen({ navigation }) {
           <MenuCard title="Reports" color="#8B5CF6" icon="📊" onPress={() => navigation.navigate('ReportsScreen')} />
         </View>
       </ScrollView>
+
+      {/* Low Stock Modal */}
+      <Modal visible={showLowStockModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>⚠️ Low Stock Items</Text>
+              <TouchableOpacity onPress={() => setShowLowStockModal(false)}>
+                <Text style={styles.closeBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={lowStockProducts}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.lowStockRow}>
+                  <Text style={styles.lowStockName}>{item.name}</Text>
+                  <Text style={styles.lowStockQty}>
+                    {item.stock_quantity} {item.unit || 'piece'}
+                  </Text>
+                </View>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.divider} />}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -80,4 +114,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', marginBottom: 12,
   },
   cardTitle: { fontSize: 16, fontWeight: '600', color: colors.text, textAlign: 'center' },
+
+  // Modal styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: {
+    backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, 
+    padding: 24, maxHeight: '80%',
+  },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.danger },
+  closeBtn: { fontSize: 20, color: colors.textLight, padding: 4 },
+  lowStockRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 },
+  lowStockName: { fontSize: 16, color: colors.text, flex: 1 },
+  lowStockQty: { fontSize: 16, fontWeight: 'bold', color: colors.danger },
+  divider: { height: 1, backgroundColor: colors.border },
 });

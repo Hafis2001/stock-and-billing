@@ -220,3 +220,25 @@ export const deleteOrders = async (db, orderIds) => {
     await db.runAsync(`DELETE FROM Orders WHERE id IN (${placeholders})`, orderIds);
   });
 };
+
+export const getStockSummary = async (db) => {
+  const result = await db.getAllAsync(`
+    SELECT 
+      SUM(stock_quantity * purchase_price) as total_stock_value,
+      SUM(stock_quantity * (selling_price - purchase_price)) as expected_profit
+    FROM Products 
+    WHERE stock_quantity > 0
+  `);
+  return result[0] || { total_stock_value: 0, expected_profit: 0 };
+};
+
+export const getLossBreakdown = async (db) => {
+  return await db.getAllAsync(`
+    SELECT reason, SUM(added_quantity * purchase_price) as total_loss
+    FROM StockHistory
+    WHERE type = 'deduct'
+    GROUP BY reason
+    ORDER BY total_loss DESC
+  `);
+};
+
